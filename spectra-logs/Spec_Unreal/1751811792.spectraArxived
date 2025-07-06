@@ -1,0 +1,63 @@
+import "DwyerPatterns.spectra"
+
+spec Spec_Unreal
+
+// This is an *unrealizable* variant of the Greenhouse specification.
+// The missing justice assumptions (marked with //FIX) make it impossible
+// for the system to fulfill its guarantees in some environment behaviors.
+
+// Environment Variables
+env boolean tempHigh;       // temperature exceeds threshold
+env boolean soilDry;        // soil moisture is low
+env boolean lightLow;       // light is not enough
+
+// System Variables
+sys boolean fanOn;          // ventilation fan is turned on
+sys boolean waterPumpOn;    // irrigation is active
+sys boolean growLightOn;    // artificial lighting is enabled
+
+// Assumptions
+
+// Initial
+asm ini !tempHigh;        // temperature is normal initially
+asm ini !soilDry;         // soil is sufficiently moist initially
+
+// Safety
+asm alw !(tempHigh & soilDry & lightLow);  
+// All three conditions do not occur at once
+
+asm alw (tempHigh -> next(tempHigh | !tempHigh));  
+// Temperature changes gradually (no immediate toggling)
+
+// Justice
+//FIX asm alwEv !soilDry;     // Soil will eventually become moist again
+//FIX asm alwEv !lightLow;    // There will eventually be enough natural light
+
+// Guarantees
+
+// Initial
+guarantee ini !fanOn;         
+// Fan is off initially
+
+guarantee ini !waterPumpOn;   
+// Water pump is off initially
+
+// Safety
+guarantee alw (tempHigh -> fanOn);  
+// If temperature is high, fan must be turned on
+
+guarantee alw (!tempHigh -> !fanOn);  
+// If temperature is normal, fan must be off
+
+guarantee alw (soilDry -> waterPumpOn);  
+// If soil is dry, activate water pump
+
+guarantee alw (lightLow -> growLightOn);  
+// If light is low, enable grow lights
+
+// Justice
+guarantee alwEv !soilDry -> !waterPumpOn;  
+// Eventually when soil is moist, the pump will be off
+
+guarantee alwEv !lightLow -> !growLightOn;  
+// Eventually when light is sufficient, grow light will be off

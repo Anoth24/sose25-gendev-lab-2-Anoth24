@@ -1,0 +1,51 @@
+import "DwyerPatterns.spectra"
+
+spec Spec_Unreal
+
+// Unrealizable variant of the Greenhouse specification.
+// The justice assumption that soil eventually becomes moist is commented out.
+// However, the system is still required to eventually see moist soil,
+// creating a conflict that causes unrealizability.
+
+// Environment Variables
+env boolean tempHigh;       // temperature exceeds threshold
+env boolean soilDry;        // soil moisture is low
+env boolean lightLow;       // light is not enough
+
+// System Variables
+sys boolean fanOn;          // ventilation fan is turned on
+sys boolean waterPumpOn;    // irrigation is active
+sys boolean growLightOn;    // artificial lighting is enabled
+
+// Assumptions
+
+// Initial
+asm ini !tempHigh;       
+asm ini !soilDry;         
+
+// Safety
+asm alw !(tempHigh & soilDry & lightLow);  
+asm alw (tempHigh -> next(tempHigh | !tempHigh));  
+
+// Justice
+asm alwEv !soilDry;     
+asm alwEv !lightLow;    
+
+// Guarantees
+
+// Initial
+guarantee ini !fanOn;         
+guarantee ini !waterPumpOn;   
+
+// Safety
+guarantee alw (tempHigh -> fanOn);  
+guarantee alw (!tempHigh -> !fanOn);  
+guarantee alw (soilDry -> waterPumpOn);  
+guarantee alw (lightLow -> growLightOn);  
+
+// Justice (problematic line)
+guarantee alwEv !soilDry;  
+// <- This line REQUIRES the environment to eventually provide moist soil,
+// but we do NOT assume that anymore — makes the spec unrealizable.
+
+guarantee alwEv !lightLow -> !growLightOn;

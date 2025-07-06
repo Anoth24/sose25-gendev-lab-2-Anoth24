@@ -1,0 +1,66 @@
+import "DwyerPatterns.spectra"
+
+spec Spec
+
+// Smart Greenhouse Specification
+// Aims to automatically control ventilation, watering, and lighting
+// based on environmental conditions
+
+// Environment Variables
+env boolean tempHigh;       // True when temperature exceeds threshold
+env boolean soilDry;         // True when soil moisture is low
+env boolean lightLow;        // True when ambient light is insufficient
+
+// System Variables
+sys boolean fanOn;           // True when ventilation fan is turned on
+sys boolean waterPumpOn;     // True when irrigation is active
+sys boolean growLightOn;     // True when artificial lighting is enabled
+
+// ---------------------- Assumptions ----------------------
+
+// Initial Assumptions (ini asm)
+asm ini !tempHigh;        // Assume temperature is normal initially
+asm ini !soilDry;         // Assume soil is sufficiently moist initially
+
+// Safety Assumptions (alw asm)
+asm alw !(tempHigh & soilDry & lightLow);  
+// All three adverse conditions do not occur at once
+
+asm alw (tempHigh -> next(tempHigh | !tempHigh));  
+// Temperature changes gradually (no immediate toggling)
+
+// Justice Assumptions (alwEv asm)
+asm alwEv !soilDry;       
+// Soil will eventually become moist again (natural or user intervention)
+
+asm alwEv !lightLow;      
+// There will eventually be enough natural light
+
+// ---------------------- Guarantees ----------------------
+
+// Initial Guarantees (ini gar)
+guarantee ini !fanOn;         
+// Fan is off initially
+
+guarantee ini !waterPumpOn;   
+// Water pump is off initially
+
+// Safety Guarantees (alw gar)
+guarantee alw (tempHigh -> fanOn);  
+// If temperature is high, fan must be turned on
+
+guarantee alw (!tempHigh -> !fanOn);  
+// If temperature is normal, fan must be off
+
+guarantee alw (soilDry -> waterPumpOn);  
+// If soil is dry, activate water pump
+
+guarantee alw (lightLow -> growLightOn);  
+// If light is low, enable grow lights
+
+// Justice Guarantees (alwEv gar)
+guarantee alwEv !soilDry -> !waterPumpOn;  
+// Eventually when soil is moist, the pump will be off
+
+guarantee alwEv !lightLow -> !growLightOn;  
+// Eventually when light is sufficient, grow light will be off

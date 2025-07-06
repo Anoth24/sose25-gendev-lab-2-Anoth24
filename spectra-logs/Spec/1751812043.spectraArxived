@@ -1,0 +1,66 @@
+import "DwyerPatterns.spectra"
+
+spec Spec
+
+//This is a Spectra specification for a Greenhouse.. 
+//It automatically control ventilation, watering, and lighting based on environmental conditions.
+
+// Environment Variables
+env boolean tempHigh;       // temperature exceeds threshold
+env boolean soilDry;         //soil moisture is low
+env boolean lightLow;        //light is not enough
+
+// System Variables
+sys boolean fanOn;           //ventilation fan is turned on
+sys boolean waterPumpOn;     //irrigation is active
+sys boolean growLightOn;     //artificial lighting is enabled
+
+// Assumptions
+
+// Initial..
+asm ini !tempHigh;        //temperature is normal initially
+asm ini !soilDry;         //soil is sufficiently moist initially
+
+// Safety..
+asm alw !(tempHigh & soilDry & lightLow);
+// All three conditions do not occur at once
+
+asm alw (tempHigh -> next(tempHigh | !tempHigh));  
+// Temperature changes gradually (no immediate toggling)
+
+// Justice
+asm alwEv !soilDry;       
+// Soil will eventually become moist again
+
+asm alwEv !lightLow;      
+// There will eventually be enough natural light
+
+
+// Guarantees
+
+// Initial..
+gar ini !fanOn;         
+// Fan is off initially
+
+gar ini !waterPumpOn;   
+// Water pump is off initially
+
+// Safety..
+gar alw (tempHigh -> fanOn);  
+// If temperature is high, fan must be turned on
+
+gar alw (!tempHigh -> !fanOn);  
+// If temperature is normal, fan must be off
+
+gar alw (soilDry -> waterPumpOn);  
+// If soil is dry, activate water pump
+
+gar alw (lightLow -> growLightOn);  
+// If light is low, enable grow lights
+
+// Justice
+gar alwEv !soilDry -> !waterPumpOn;  
+// Eventually when soil is moist, the pump will be off
+
+gar alwEv !lightLow -> !growLightOn;  
+// Eventually when light is sufficient, grow light will be off
